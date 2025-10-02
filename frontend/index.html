@@ -1,0 +1,48 @@
+
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>AIDAS-HT Chatbot (HF)</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;max-width:900px;margin:0 auto;padding:2rem;}
+    .card{border:1px solid #ddd;border-radius:12px;padding:1rem;margin:1rem 0;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    textarea{width:100%;height:120px;padding:10px;border-radius:8px;border:1px solid #ccc}
+    button{padding:.6rem 1rem;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer}
+    label{display:inline-flex;align-items:center;gap:6px;margin-left:8px}
+    .small{font-size:.9em;color:#666}
+  </style>
+</head>
+<body>
+  <h1>AIDAS-HT Chatbot (HF açık model)</h1>
+  <p class="small">Bu sürüm, <b>google/flan-t5-small</b> modelini sunucu içinde çalıştırır; <b>anahtar gerektirmez</b>. İstersen PDF bağlamını da kullanabilirsin (RAG hibrit).</p>
+  <div class="card">
+    <textarea id="q" placeholder="Soru yazın: Örn. 'Hasar sınıfları nelerdir?'"></textarea>
+    <div class="row">
+      <button onclick="askHF(false)">HF (salt LLM)</button>
+      <button onclick="askHF(true)">HF + RAG (PDF bağlamıyla)</button>
+      <label><input type="number" id="k" value="5" min="1" max="10"/> top-k</label>
+    </div>
+    <div id="out"></div>
+  </div>
+<script>
+const API = location.origin.replace(/\/$/, '');
+async function askHF(useRag){
+  const question = document.querySelector('#q').value.trim();
+  const k = parseInt(document.querySelector('#k').value||"5",10);
+  if(!question){ alert("Lütfen soru yazın."); return; }
+  const res = await fetch(API + "/ask_hf", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({user_id:"demo", question, k, use_rag: !!useRag})
+  });
+  const data = await res.json();
+  const box = document.querySelector('#out');
+  box.innerHTML = "<div class='card'><h3>Cevap ("+(data.mode||"")+")</h3><p>"+
+    (data.answer||"")+"</p><p class='small'>Bağlam kullanıldı mı? "+ (data.used_context?"Evet":"Hayır") +"</p></div>";
+}
+</script>
+</body>
+</html>
